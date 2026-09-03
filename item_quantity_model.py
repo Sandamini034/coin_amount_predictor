@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 import math
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "../database/supermarket.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "./database/supermarket.db")
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "item_quantity_model.pkl")
 
 FEATURE_COLUMNS = [

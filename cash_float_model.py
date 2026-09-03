@@ -19,21 +19,21 @@ FEATURE_COLUMNS = [
 
 def build_daily_table(df):
     df = df.copy()
-    df["Date"] = pd.to_datetime(df["Date"])
+    df["date"] = pd.to_datetime(df["date"])
 
-    daily = df.groupby("Date").agg(
-        total_revenue=("Net_Amount", "sum"),
-        transaction_count=("Invoice_No", "nunique")
+    daily = df.groupby("date").agg(
+        total_revenue=("net_amount", "sum"),
+        transaction_count=("invoice_no", "nunique")
     ).reset_index()
 
-    daily["DayOfWeek"] = daily["Date"].dt.dayofweek
+    daily["DayOfWeek"] = daily["date"].dt.dayofweek
 
     #sin/cos allows the model to undersatnd that sunday and monday are close to each other
     daily["DayOfWeek_sin"] = np.sin(2 * np.pi * daily["DayOfWeek"] / 7)
     daily["DayOfWeek_cos"] = np.cos(2 * np.pi * daily["DayOfWeek"] / 7)
 
-    daily["Month"] = daily["Date"].dt.month
-    daily["DayOfMonth"] = daily["Date"].dt.day
+    daily["Month"] = daily["date"].dt.month
+    daily["DayOfMonth"] = daily["date"].dt.day
     daily["IsWeekend"] = (daily["DayOfWeek"] >= 5).astype(int)
 
     # lagged features so tomorrow's prediction only uses info we already have today
@@ -49,7 +49,7 @@ def build_daily_table(df):
     print(
     daily[
         [
-            "Date",
+            "date",
            "total_revenue",
            "rolling_7day_avg_revenue"
        ]
@@ -61,7 +61,7 @@ def build_daily_table(df):
 
 def train():
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql("SELECT Date, Net_Amount, Invoice_No FROM transactions", conn)
+    df = pd.read_sql("SELECT date, net_amount, invoice_no FROM invoice_line_items", conn)
     conn.close()
 
     daily = build_daily_table(df)
@@ -108,13 +108,13 @@ def predict_next_day(daily=None):
 
     if daily is None:
         conn = sqlite3.connect(DB_PATH)
-        df = pd.read_sql("SELECT Date, Net_Amount, Invoice_No FROM transactions", conn)
+        df = pd.read_sql("SELECT date, net_amount, invoice_no FROM invoice_line_items", conn)
         conn.close()
         daily = build_daily_table(df)
 
-    last_date = daily["Date"].max()
+    last_date = daily["date"].max()
     next_date = last_date + pd.Timedelta(days=1)
-    recent = daily.sort_values("Date").tail(7)
+    recent = daily.sort_values("date").tail(7)
 
     features = {
         "DayOfWeek": next_date.dayofweek,
